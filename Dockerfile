@@ -1,24 +1,22 @@
-FROM php:8.2-cli
+# Gunakan gambar dasar PHP resmi dengan Nginx yang dioptimalkan untuk Laravel
+FROM ghcr.io/shinsenter/php:8.2-nginx-laravel
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    git unzip libpng-dev libonig-dev libxml2-dev curl \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+# Salin semua file proyek ke dalam kontainer
+COPY . /var/www/html
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Atur izin folder agar server bisa menulis file log dan cache
+RUN chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
-WORKDIR /app
+# Perintah ini akan dijalankan saat deploy untuk setup proyek
+# Termasuk npm install dan npm run build
+RUN composer install --no-dev --optimize-autoloader \
+    && npm install \
+    && npm run build \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
-COPY . .
-
-# Install dependencies Laravel
-RUN composer install --no-dev --optimize-autoloader
-RUN php artisan config:clear && php artisan cache:clear
-
-# Expose port
-EXPOSE 8080
-
-# Jalankan Laravel
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
-
+# Perintah akhir yang akan dijalankan di dalam kontainer.
+# Tidak perlu 'php artisan serve', karena Nginx sudah menanganinya.
+CMD ["/usr/bin/start-server.sh"]
