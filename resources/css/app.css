@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Style untuk link navigasi yang aktif saat di-scroll */
+.nav-link.is-active {
+    @apply text-text-light;
+    @apply pl-8;
+}
+
+.nav-link.is-active::before {
+    @apply w-4;
+}
